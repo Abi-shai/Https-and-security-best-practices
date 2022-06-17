@@ -6,9 +6,12 @@ const helmet = require('helmet')
 
 const app = express()
 
+// Helmet is a usefull package that add a security layer to a nodejs Api
 app.use(helmet())
 app.use(express.json())
 
+// Good practice in an Express application to use functions as parameters to an Express endpoint instead of 
+// a middleware
 function checkLoggedIn(req, res, next) {
     const isLoggeIn = true
     if(!isLoggeIn) {
@@ -27,7 +30,8 @@ app.get('/auth/google/callback', (req, res) => {})
 
 app.get('/auth/logout', (req, res) => {})
 
-app.get('/secret', checkLoggedIn, (req, res) => {
+
+app.get('/secret', /** Used the function as param there**/ checkLoggedIn, (req, res) => {
     return res.send('Your secret is that you have 500$')
 })
 
