@@ -4,7 +4,17 @@ const path = require('path')
 const express = require('express')
 const helmet = require('helmet')
 
+require('dotenv').config()
+
+const PORT = process.env.PORT || 5000
+
 const app = express()
+
+// Google OAuth configuration params
+const config = {
+    CLIENT_ID: process.env.CLIENT_ID,
+    CLIENT_SECRET: process.env.CLIENT_SECRET,
+}
 
 // Helmet is a usefull package that add a security layer to a nodejs Api
 app.use(helmet())
@@ -42,6 +52,6 @@ app.get('/', (req, res) => {
 https.createServer({
     key: fs.readFileSync('key.pem'),
     cert: fs.readFileSync('cert.pem')
-}, app).listen(8000, () => {
-    console.log('Listenning at port 8000')
+}, app).listen(PORT, () => {
+    console.log(`Listenning at port ${PORT}`)
 })
