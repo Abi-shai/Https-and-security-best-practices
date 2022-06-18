@@ -3,6 +3,8 @@ const https = require('https')
 const path = require('path')
 const express = require('express')
 const helmet = require('helmet')
+const passport = require('passport')
+const { Strategy } = require('passport-google-oauth20')
 
 require('dotenv').config()
 
@@ -16,8 +18,22 @@ const config = {
     CLIENT_SECRET: process.env.CLIENT_SECRET,
 }
 
+function verifyCallback(accessToken, refreshToken, profile, done){
+    console.log('Google profile', profile);
+    done(null, profile)
+}
+
+const AUTH_OPTIONS = {
+    callbackURL: '/auth/google/callback',
+    clientID: config.CLIENT_ID,
+    clientSecret: config.CLIENT_SECRET,
+}
+
+passport.use(new Strategy(AUTH_OPTIONS, verifyCallback))
+
 // Helmet is a usefull package that add a security layer to a nodejs Api
 app.use(helmet())
+app.use(passport.initialize())
 app.use(express.json())
 
 // Good practice in an Express application to use functions as parameters to an Express endpoint instead of 
@@ -32,11 +48,26 @@ function checkLoggedIn(req, res, next) {
     next()
 }
 
-app.get('/auth/google', (req, res) => {
+app.get('/auth/google',
+    passport.authenticate('google', {
+        scope: ['email']
+    })
+)
 
+app.get('/auth/google/callback', 
+    passport.authenticate('google', {
+        failureRedirect:'/failure',
+        successRedirect: '/',
+        session: false
+    }),
+    (req, res) => {
+        console.log('Google called us back')
+    }
+)
+
+app.get('/failure', (req, res) => {
+    return res.send('Failed to log in')
 })
-
-app.get('/auth/google/callback', (req, res) => {})
 
 app.get('/auth/logout', (req, res) => {})
 
