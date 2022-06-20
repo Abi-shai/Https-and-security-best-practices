@@ -5,6 +5,7 @@ const express = require('express')
 const helmet = require('helmet')
 const passport = require('passport')
 const { Strategy } = require('passport-google-oauth20')
+const cookieSession = require('cookie-session')
 
 require('dotenv').config()
 
@@ -16,6 +17,8 @@ const app = express()
 const config = {
     CLIENT_ID: process.env.CLIENT_ID,
     CLIENT_SECRET: process.env.CLIENT_SECRET,
+    COOKIE_KEY_1: process.env.COOKIE_KEY_1,
+    COOKIE_KEY_2: process.env.COOKIE_KEY_2
 }
 
 function verifyCallback(accessToken, refreshToken, profile, done){
@@ -33,6 +36,11 @@ passport.use(new Strategy(AUTH_OPTIONS, verifyCallback))
 
 // Helmet is a usefull package that add a security layer to a nodejs Api
 app.use(helmet())
+app.use(cookieSession({
+    name: 'session',
+    maxAge: 24 * 60 * 60 * 1000,
+    keys: [ config.COOKIE_KEY_2, config.COOKIE_KEY_1 ]
+}))
 app.use(passport.initialize())
 app.use(express.json())
 
