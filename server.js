@@ -32,7 +32,16 @@ const AUTH_OPTIONS = {
     clientSecret: config.CLIENT_SECRET,
 }
 
-passport.use(new Strategy(AUTH_OPTIONS, verifyCallback))
+
+// Save the session to the cookie
+passport.serializeUser((user, done) => {
+    done(null, user.id)
+})
+
+// Read/Load the session from the cookie
+passport.deserializeUser((obj, done) => {
+    done(null, obj)
+})
 
 // Helmet is a usefull package that add a security layer to a nodejs Api
 app.use(helmet())
@@ -42,12 +51,14 @@ app.use(cookieSession({
     keys: [ config.COOKIE_KEY_2, config.COOKIE_KEY_1 ]
 }))
 app.use(passport.initialize())
-app.use(express.json())
+app.use(passport.session())
+
+passport.use(new Strategy(AUTH_OPTIONS, verifyCallback))
 
 // Good practice in an Express application to use functions as parameters to an Express endpoint instead of 
 // a middleware
 function checkLoggedIn(req, res, next) {
-    const isLoggeIn = true
+    const isLoggeIn = req.isAuthenticated() && req.user
     if(!isLoggeIn) {
         return res.status(401).json({
             error: `You can't log in!`
@@ -63,21 +74,24 @@ app.get('/auth/google',
 )
 
 app.get('/auth/google/callback', 
-    passport.authenticate('google', {
-        failureRedirect:'/failure',
-        successRedirect: '/',
-        session: false
-    }),
-    (req, res) => {
-        console.log('Google called us back')
-    }
+  passport.authenticate('google', {
+    failureRedirect: '/failure',
+    successRedirect: '/',
+    session: true,
+  }), 
+  (req, res) => {
+    console.log('Google called us back!');
+  }
 )
 
 app.get('/failure', (req, res) => {
     return res.send('Failed to log in')
 })
 
-app.get('/auth/logout', (req, res) => {})
+app.get('/auth/logout', (req, res) => {
+    req.logOut()
+    res.redirect('/')
+})
 
 
 app.get('/secret', /** Used the function as param there**/ checkLoggedIn, (req, res) => {
@@ -92,5 +106,5 @@ https.createServer({
     key: fs.readFileSync('key.pem'),
     cert: fs.readFileSync('cert.pem')
 }, app).listen(PORT, () => {
-    console.log(`Listenning at port ${PORT}`)
+    console.log(`Listenning at port ${PORT}...`)
 })
